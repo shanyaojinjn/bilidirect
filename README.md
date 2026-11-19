@@ -2,9 +2,11 @@
 
 在 B 站视频页一键复制视频直链的小工具。纯静态页面，没有后端、没有第三方解析接口——解析完全在你自己的浏览器里完成。
 
+**在线演示**：<https://bili.shany.cc/>
+
 ## 使用
 
-1. 打开工具页面（部署后的 `index.html`），按 `Ctrl + Shift + B` 显示书签栏
+1. 打开 <https://bili.shany.cc/>（或你自己部署的 `index.html`），按 `Ctrl + Shift + B` 显示书签栏
 2. 按住页面上的「拖住我，拖到书签栏」按钮，拖进书签栏（书签会被命名为「B站解析工具」）
 3. 打开任意 B 站视频播放页（网址含 `/video/BV...`），点一下书签
 4. 视频直链自动复制到剪贴板
@@ -39,6 +41,7 @@
 
 ## 链接
 
+- 演示站：<https://bili.shany.cc/>
 - 官网：<https://shany.cc>
 - 仓库：<https://github.com/shanyaojinjn/bilidirect>
 
