@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B站直链书签解析工具 · BiliDirect</title>
+<style>
+    :root{
+        --bg:#0c0d0f;
+        --card:#121417;
+        --card-2:#181b1f;
+        --line:#24282e;
+        --text:#e6e9ed;
+        --muted:#868f9b;
+        --blue:#00a1d6;
+        --blue-2:#00aeec;
+        --blue-soft:rgba(0,161,214,.1);
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{min-height:100%}
+    body{
+        font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+        color:var(--text);
+        line-height:1.65;
+        background:var(--bg);
+        display:flex;
+        justify-content:center;
+        padding:56px 20px 64px;
+        -webkit-font-smoothing:antialiased;
+    }
+    main{position:relative;z-index:1;width:100%;max-width:760px}
+    .card{
+        border:1px solid var(--line);
+        border-radius:14px;
+        padding:40px 40px 30px;
+        background:var(--card);
+    }
+    .english{
+        margin-top:10px;
+        font-size:12px;font-weight:600;letter-spacing:.1em;
+        color:var(--muted);text-align:center;
+    }
+    h1{
+        font-size:clamp(28px,5vw,40px);
+        line-height:1.2;
+        letter-spacing:-.02em;
+        font-weight:700;
+        margin-bottom:0;
+        text-align:center;
+    }
+    h1 span{color:var(--blue-2)}
+    .drag{
+        display:flex;align-items:center;justify-content:center;
+        width:100%;
+        margin-top:48px;
+        padding:18px 22px;
+        border-radius:10px;
+        background:var(--blue);
+        color:#fff;
+        font-size:0;
+        font-weight:650;
+        text-decoration:none;
+        text-align:center;
+        cursor:grab;
+        user-select:none;
+        transition:background-color .15s ease;
+    }
+    .drag:hover{background:#00b0e8}
+    .drag:active{cursor:grabbing;background:#0093c4}
+    .drag::before{content:"拖住我，拖到书签栏";font-size:clamp(17px,3vw,20px)}
+    .hint{text-align:center;color:var(--muted);font-size:13px;margin-top:13px}
+    kbd{
+        display:inline-block;padding:1px 6px;border:1px solid var(--line);border-radius:5px;
+        background:var(--card-2);color:var(--text);font-size:12px;font-family:inherit;
+    }
+    .steps{
+        display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+        margin:40px 0 24px;
+        border:1px solid var(--line);border-radius:10px;overflow:hidden;
+        background:var(--line);
+    }
+    .step{background:var(--card);padding:18px 16px}
+    .step span{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--muted);margin-bottom:6px}
+    .step h3{font-size:14px;font-weight:600;margin-bottom:4px}
+    .step p{font-size:13px;color:var(--muted);line-height:1.55}
+    .step code{color:#b9c0ca;font-size:12px;word-break:break-all}
+    details{border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+    summary{cursor:pointer;color:var(--muted);font-size:14px;font-weight:600}
+    summary:hover{color:var(--text)}
+    pre{
+        margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:8px;
+        background:var(--bg);color:#c8ced8;font-size:12px;line-height:1.6;
+        white-space:pre-wrap;word-break:break-all;max-height:250px;overflow:auto;
+    }
+    .copy-btn{
+        margin-top:12px;padding:7px 14px;border-radius:8px;
+        border:1px solid var(--line);background:var(--card-2);
+        color:var(--text);font-size:13px;font-weight:600;cursor:pointer;
+        font-family:inherit;transition:border-color .15s ease,color .15s ease;
+    }
+    .copy-btn:hover{border-color:var(--blue);color:var(--blue-2)}
+    .local{
+        margin:22px 0 24px;padding:16px 18px;
+        border:1px solid var(--line);
+        border-left:2px solid var(--blue);
+        border-radius:10px;
+        background:var(--card-2);
+    }
+    .local .strong{font-weight:700;color:var(--text);font-size:15px}
+    .local p + p{margin-top:5px;color:var(--muted);font-size:13px}
+    footer{
+        padding-top:20px;border-top:1px solid var(--line);
+        display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+        font-size:13px;color:var(--muted);
+    }
+    .links{display:flex;gap:16px;flex-wrap:wrap}
+    footer a{color:var(--blue-2);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s ease,color .15s ease}
+    footer a:hover{color:#fff;border-color:rgba(0,174,236,.6)}
+    #toast{
+        position:fixed;left:50%;bottom:34px;transform:translate(-50%,14px);
+        padding:11px 20px;border-radius:8px;background:var(--blue);color:#fff;
+        font-size:14px;font-weight:650;opacity:0;pointer-events:none;
+        transition:opacity .2s ease,transform .2s ease;z-index:9;
+    }
+    #toast.show{opacity:1;transform:translate(-50%,0)}
+    @media (max-width:640px){
+        body{padding:24px 14px 40px}
+        .card{padding:28px 22px 24px;border-radius:12px}
+        .steps{grid-template-columns:1fr}
+        footer{flex-direction:column;align-items:flex-start}
+    }
+</style>
+</head>
+<body>
+<main>
+    <div class="card">
+        <h1>B站<span>直链</span>书签解析工具</h1>
+        <p class="english">BILIDIRECT · BILIBILI DIRECT LINK</p>
+
+        <a id="bm" class="drag" href="javascript:(async()=&gt;{const m=location.pathname.match(/\/video\/(BV[0-9A-Za-z]{10})/),u=new URL(location.href),bv=(m&amp;&amp;m[1])||u.searchParams.get('bvid');if(!bv)return alert('请在 B 站视频播放页使用');const p=+(u.searchParams.get('p')||1),get=async x=&gt;(await fetch(x,{credentials:'include'})).json(),v=await get('https://api.bilibili.com/x/web-interface/view?bvid='+bv);if(v.code!==0)return alert('取视频信息失败：'+(v.message||v.code));const pg=(v.data.pages||[]).find(x=&gt;x.page===p)||{cid:v.data.cid},d=await get('https://api.bilibili.com/x/player/playurl?bvid='+bv+'&amp;cid='+pg.cid+'&amp;qn=80&amp;fnval=1&amp;platform=html5&amp;high_quality=1');if(d.code!==0)return alert('解析失败：'+(d.message||d.code));const url=(d.data.durl&amp;&amp;d.data.durl[0]&amp;&amp;d.data.durl[0].url)||'';if(!url)return alert('没拿到直链，可能需要登录或是番剧');const q={16:'360P',32:'480P',64:'720P',80:'1080P',112:'1080P+',116:'1080P60',120:'4K'}[d.data.quality]||d.data.quality,copy=async t=&gt;{try{await navigator.clipboard.writeText(t);return 1}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok}};if(await copy(url))alert('已复制 '+q+' 直链：'+url);else prompt('已解析 '+q+'，请手动复制：',url)})()" title="B站解析工具">B站解析工具</a>
+        <p class="hint">按住按钮不放，拖到浏览器书签栏即可添加。按 <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> 显示书签栏。</p>
+
+        <section class="steps">
+            <div class="step"><span>01</span><h3>打开视频页</h3><p>任意 B 站视频播放页，网址里带 <code>/video/BV...</code>。</p></div>
+            <div class="step"><span>02</span><h3>点书签</h3><p>点书签栏里的「B站直链」。</p></div>
+            <div class="step"><span>03</span><h3>复制直链</h3><p>直链自动复制，支持分 P。</p></div>
+        </section>
+
+        <details>
+            <summary>书签代码</summary>
+            <pre id="code"></pre>
+            <button id="copy" class="copy-btn" type="button">复制代码</button>
+        </details>
+
+        <div class="local">
+            <p class="strong">解析在浏览器本地完成，不经过任何服务器。</p>
+            <p>书签在 B 站页面里运行，用你自己的 IP 和登录态。没有后端，没有第三方解析站。</p>
+        </div>
+
+        <footer>
+            <div class="links">
+                <a href="https://shany.cc" target="_blank" rel="noopener">官网 shany.cc</a>
+                <a href="https://github.com/shanyaojinjn/bilidirect" target="_blank" rel="noopener">GitHub · BiliDirect</a>
+            </div>
+            <div>© 2026 ShanY.cc · BiliDirect</div>
+        </footer>
+    </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const bm = document.getElementById('bm');
+const FULL = bm.getAttribute('href');
+const toastEl = document.getElementById('toast');
+let toastTimer;
+
+function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+    return ok;
+}
+
+bm.addEventListener('click', (e) => {
+    e.preventDefault();
+    toast('按住按钮不放，拖到书签栏');
+});
+
+document.getElementById('code').textContent = FULL;
+
+document.getElementById('copy').addEventListener('click', async () => {
+    try {
+        await navigator.clipboard.writeText(FULL);
+        toast('书签代码已复制');
+    } catch (e) {
+        if (fallbackCopy(FULL)) toast('书签代码已复制');
+        else toast('复制失败，请手动选择代码复制');
+    }
+});
+</script>
+</body>
+</html>
